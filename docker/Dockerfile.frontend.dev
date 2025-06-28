@@ -1,0 +1,28 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Create .env.local with required environment variables
+# Note: The actual values will be provided through environment variables in the compose file
+RUN touch .env.local && \
+    echo "USE_TELOGICAL_BACKEND=true" >> .env.local && \
+    echo "TELOGICAL_API_URL=http://backend:8081" >> .env.local && \
+    echo "SKIP_DB_MIGRATION=true" >> .env.local && \
+    echo "SKIP_AUTH_SETUP=true" >> .env.local
+
+# Expose port
+EXPOSE 3000
+
+# Simple startup script that uses PostgreSQL auth instead of mock
+CMD sh -c "echo '🔧 Setting up environment variables...' && \
+    echo 'POSTGRES_URL=${POSTGRES_URL}' >> .env.local && \
+    echo 'NEXTAUTH_SECRET=${NEXTAUTH_SECRET}' >> .env.local && \
+    echo 'NEXTAUTH_URL=${NEXTAUTH_URL}' >> .env.local && \
+    echo '🔍 Environment check:' && \
+    echo 'NEXTAUTH_SECRET is set:' && test -n '${NEXTAUTH_SECRET}' && echo 'YES' || echo 'NO' && \
+    echo 'POSTGRES_URL is set:' && test -n '${POSTGRES_URL}' && echo 'YES' || echo 'NO' && \
+    echo '📄 Final .env.local contents:' && cat .env.local && \
+    echo '🏗️ Using existing auth configuration...' && \
+    npm install && \
+    (npx tsx lib/db/migrate.ts || echo 'Migration skipped - tables may need manual creation') && \
+    npm run dev"

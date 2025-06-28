@@ -1,0 +1,21 @@
+FROM python:3.12.3-slim
+
+WORKDIR /app
+
+ENV UV_PROJECT_ENVIRONMENT="/usr/local/"
+ENV UV_COMPILE_BYTECODE=1
+
+COPY pyproject.toml .
+COPY uv.lock .
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend directories (renamed from src to backend)
+COPY backend/agents/ ./agents/
+COPY backend/core/ ./core/
+COPY backend/memory/ ./memory/
+COPY backend/schema/ ./schema/
+COPY backend/service/ ./service/
+COPY backend/run_service.py .
+
+CMD ["python", "run_service.py"]

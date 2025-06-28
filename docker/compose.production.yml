@@ -1,0 +1,194 @@
+# ===================================
+# PRODUCTION DOCKER COMPOSE CONFIGURATION
+# ===================================
+# This file is optimized for production deployment
+# Use: docker-compose -f docker/compose.production.yml up -d
+
+version: '3.8'
+
+services:
+  # Backend service
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8081:8081"
+    env_file: 
+      - ../.env  # Load production environment variables
+    environment:
+      # Database Connection
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgres}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - AUTH_TRUST_HOST=true
+      - NODE_ENV=production
+
+      # Server Configuration
+      - HOST=0.0.0.0
+      - PORT=8081
+      - USE_TELOGICAL_BACKEND=true
+      - TELOGICAL_API_URL=${TELOGICAL_API_URL}
+      - TELOGICAL_API_SECRET=${TELOGICAL_API_SECRET}
+      - MODE=production
+      
+      # AI API Keys
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT_MAP=${AZURE_OPENAI_DEPLOYMENT_MAP}
+      
+      # Telogical API Configuration
+      - TELOGICAL_AUTH_TOKEN=${TELOGICAL_AUTH_TOKEN}
+      - TELOGICAL_GRAPHQL_ENDPOINT=${TELOGICAL_GRAPHQL_ENDPOINT:-https://residential-api.telogical.com/graphql}
+      - TELOGICAL_AUTH_TOKEN_2=${TELOGICAL_AUTH_TOKEN_2}
+      - TELOGICAL_GRAPHQL_ENDPOINT_2=${TELOGICAL_GRAPHQL_ENDPOINT_2:-https://llmapi.telogical.com/graphql}
+      - TELOGICAL_LOCALE=${TELOGICAL_LOCALE:-us-en}
+      
+      # Data Files
+      - ZIP_CODE_CSV_PATH=${ZIP_CODE_CSV_PATH:-geo-data.csv}
+      - DMA_CSV_PATH=${DMA_CSV_PATH:-DMAs.csv}
+      
+      # Security
+      - AUTH_SECRET=${AUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      
+      # Monitoring (Optional)
+      - LANGCHAIN_TRACING_V2=${LANGCHAIN_TRACING_V2:-true}
+      - LANGCHAIN_API_KEY=${LANGCHAIN_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGCHAIN_ENDPOINT=${LANGCHAIN_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-telogical}
+      
+      # Azure specific models
+      - TELOGICAL_API_KEY_GPT=${TELOGICAL_API_KEY_GPT}
+      - TELOGICAL_MODEL_ENDPOINT_GPT=${TELOGICAL_MODEL_ENDPOINT_GPT}
+      - TELOGICAL_MODEL_DEPLOYMENT_GPT=${TELOGICAL_MODEL_DEPLOYMENT_GPT}
+      - TELOGICAL_MODEL_API_VERSION_GPT=${TELOGICAL_MODEL_API_VERSION_GPT}
+      - TELOGICAL_MODEL_DEPLOYMENT_LLAMA=${TELOGICAL_MODEL_DEPLOYMENT_LLAMA}
+      - TELOGICAL_MODEL_API_VERSION_LLAMA=${TELOGICAL_MODEL_API_VERSION_LLAMA}
+      - OPENAI_API_VERSION=${OPENAI_API_VERSION}
+      
+      # Optional providers
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
+      
+      # Feature flags
+      - USE_AWS_BEDROCK=${USE_AWS_BEDROCK:-false}
+      - USE_FAKE_MODEL=${USE_FAKE_MODEL:-false}
+      
+    volumes:
+      - ../data:/app/data:ro  # Read-only data volume for production
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://backend:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  # Frontend service
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    env_file:
+      - ../.env  # Load production environment variables 
+    environment:
+      # Database Connection
+      - AUTH_SECRET=${AUTH_SECRET}
+      - AUTH_TRUST_HOST=true
+      - NODE_ENV=production
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - TELOGICAL_API_URL=${TELOGICAL_API_URL}
+      - TELOGICAL_API_SECRET=${TELOGICAL_API_SECRET}
+      - POSTGRES_URL=${POSTGRES_URL}
+      - USE_TELOGICAL_BACKEND=true
+
+      
+      # Production settings
+      - SKIP_DB_MIGRATION=${SKIP_DB_MIGRATION:-false}
+      - SKIP_AUTH_SETUP=${SKIP_AUTH_SETUP:-false}
+    
+    depends_on:
+      backend:
+        condition: service_healthy
+    
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://frontend:3000/api/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 15s
+    
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+networks:
+  default:
+    driver: bridge
+
+# =============================================================================
+# PRODUCTION DEPLOYMENT GUIDE
+# =============================================================================
+#
+# OVERVIEW:
+# This setup uses a single .env file in the root of your project to manage
+# all configuration for both the frontend and backend services.
+#
+# KEY VARIABLES TO CONFIGURE IN .ENV:
+#
+# --- General ---
+# - POSTGRES_URL: Full connection string for your PostgreSQL database.
+# - AUTH_SECRET: A long, random string used to secure the backend.
+# - TELOGICAL_API_SECRET: Must be the *exact same* value as AUTH_SECRET.
+# - NEXTAUTH_SECRET: A different, long, random string for NextAuth security.
+#
+# --- For Production Deployment ---
+# - NEXTAUTH_URL: The public URL of your frontend (e.g., https://app.yourdomain.com).
+# - TELOGICAL_API_URL: The public URL of your backend (e.g., https://api.yourdomain.com).
+#
+# --- For Local Development ---
+# - NEXTAUTH_URL=http://localhost:3000
+# - TELOGICAL_API_URL=http://localhost:8081
+#
+# TO DEPLOY:
+# Once your .env file is configured, run the following command from your
+# project's root directory:
+#
+# docker-compose -f docker/compose.production.yml up -d
+#
+# =============================================================================

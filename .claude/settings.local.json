@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(chmod:*)",
+      "Bash(cp:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(npm run lint)",
+      "Bash(ls:*)",
+      "Bash(sed:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker-compose ps:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install)",
+      "WebFetch(domain:render.com)",
+      "Bash(npx next build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout 30 npx tsc --noEmit --skipLibCheck)",
+      "Bash(timeout 20 npx next build --no-lint)",
+      "Bash(npm run build:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": false
+}

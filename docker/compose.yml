@@ -1,0 +1,42 @@
+services:
+  # Backend service
+  backend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.backend
+    ports:
+      - "8081:8081"
+    env_file: ../.env  # Use the project's .env file directly
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8081
+      # Database configuration - using Postgres as specified
+      - DATABASE_TYPE=postgres
+    volumes:
+      - ../data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
+
+  # Frontend service
+  frontend:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-random_secret_string_here}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - USE_TELOGICAL_BACKEND=true
+      - TELOGICAL_API_URL=http://backend:8081
+      - POSTGRES_URL=${POSTGRES_URL}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SKIP_DB_MIGRATION=${SKIP_DB_MIGRATION:-true}
+    depends_on:
+      backend:
+        condition: service_healthy

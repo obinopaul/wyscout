@@ -1,0 +1,9 @@
+{
+    "name": "Telogical",
+    "description": "Multi-agent system using Telogical data for telecom market research (competitors, package lists) and detailed package analysis/comparison by location.",
+    "dependencies": ["."],
+    "graphs": {
+        "dynamic_swarm_refined": "./backend/agents/dynamic_agents/agent.py:dynamic_swarm_refined"
+    },
+    "env": ".env"
+  }

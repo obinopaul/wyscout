@@ -1,0 +1,181 @@
+# Render Blueprint for Telogical Chatbot
+# This file enables one-click deployment to Render
+# 
+# To deploy:
+# 1. Push this file to your GitHub repository
+# 2. Go to https://dashboard.render.com
+# 3. Click "New" -> "Blueprint"
+# 4. Connect your GitHub repository
+# 5. Render will create all services automatically
+# 6. Set the secret environment variables in each service dashboard
+
+services:
+
+  # Backend Service (Python FastAPI)
+  - type: web
+    name: telogical-backend
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./docker/Dockerfile.backend
+    healthCheckPath: /health
+    envVars:
+      # Database Connection (using your existing PostgreSQL)
+      - key: DATABASE_TYPE
+        value: postgres
+      - key: POSTGRES_URL
+        sync: false
+      - key: POSTGRES_HOST
+        sync: false
+      - key: POSTGRES_PORT
+        value: 5432
+      - key: POSTGRES_DB
+        sync: false
+      - key: POSTGRES_USER
+        sync: false
+      - key: POSTGRES_PASSWORD
+        sync: false
+      
+      # Server Configuration
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 8081
+      - key: MODE
+        value: production
+      
+      # AI API Keys (MUST be set manually in Render dashboard)
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_API_KEY
+        sync: false
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false
+      - key: AZURE_OPENAI_DEPLOYMENT_MAP
+        sync: false
+      
+      # Telogical API Configuration
+      - key: TELOGICAL_AUTH_TOKEN
+        sync: false
+      - key: TELOGICAL_GRAPHQL_ENDPOINT
+        value: https://residential-api.telogical.com/graphql
+      - key: TELOGICAL_AUTH_TOKEN_2
+        sync: false
+      - key: TELOGICAL_GRAPHQL_ENDPOINT_2
+        value: https://llmapi.telogical.com/graphql
+      - key: TELOGICAL_LOCALE
+        value: us-en
+      
+      # Data Files (just filenames, not paths - code will prepend data/ directory)
+      - key: ZIP_CODE_CSV_PATH
+        value: geo-data.csv
+      - key: DMA_CSV_PATH
+        value: DMAs.csv
+      
+      # Security
+      - key: AUTH_SECRET
+        generateValue: true
+      
+      # Monitoring (Optional)
+      - key: LANGCHAIN_TRACING_V2
+        value: true
+      - key: LANGCHAIN_API_KEY
+        sync: false
+      - key: LANGCHAIN_PROJECT
+        value: telogical-render-production
+
+  # Frontend Service (Next.js)
+  - type: web
+    name: telogical-frontend
+    runtime: docker
+    plan: starter
+    region: oregon
+    dockerfilePath: ./docker/Dockerfile.frontend
+    envVars:
+      # Authentication
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: NEXTAUTH_URL
+        sync: false
+      
+      # Backend Connection
+      - key: USE_TELOGICAL_BACKEND
+        value: true
+      - key: TELOGICAL_API_URL
+        sync: false
+      - key: TELOGICAL_API_SECRET
+        sync: false
+      
+      # Database Connection (using your existing PostgreSQL)
+      - key: POSTGRES_URL
+        sync: false
+      
+      # Google OAuth (MUST be set manually in Render dashboard)
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      
+      # Production Settings
+      - key: NODE_ENV
+        value: production
+
+# =============================================================================
+# POST-DEPLOYMENT CONFIGURATION GUIDE
+# =============================================================================
+# After blueprint deployment, manually configure these environment variables:
+#
+# 1. BACKEND SERVICE (telogical-backend):
+#    Go to: Render Dashboard > telogical-backend > Environment
+#    Add these variables:
+#    
+#    DATABASE (your existing PostgreSQL):
+#    - POSTGRES_URL: postgres://user:password@your-host:5432/database
+#    - POSTGRES_HOST: your-postgres-host
+#    - POSTGRES_DB: your-database-name
+#    - POSTGRES_USER: your-username
+#    - POSTGRES_PASSWORD: your-password
+#    
+#    AI API KEYS:
+#    - OPENAI_API_KEY: your-openai-api-key
+#    - ANTHROPIC_API_KEY: your-anthropic-api-key  
+#    - AZURE_OPENAI_API_KEY: your-azure-openai-api-key
+#    - AZURE_OPENAI_ENDPOINT: https://your-resource.openai.azure.com/
+#    - AZURE_OPENAI_DEPLOYMENT_MAP: {"gpt-4o": "your-deployment-name"}
+#    - TELOGICAL_AUTH_TOKEN: your-telogical-auth-token
+#    - TELOGICAL_AUTH_TOKEN_2: your-telogical-auth-token-2
+#    - LANGCHAIN_API_KEY: your-langsmith-api-key (optional)
+#
+# 2. FRONTEND SERVICE (telogical-frontend):
+#    Go to: Render Dashboard > telogical-frontend > Environment
+#    Add these variables:
+#    - POSTGRES_URL: postgres://user:password@your-host:5432/database (same as backend)
+#    - NEXTAUTH_URL: https://telogical-frontend-XXXX.onrender.com (get from service URL)
+#    - TELOGICAL_API_URL: https://telogical-backend-XXXX.onrender.com (get from service URL)
+#    - TELOGICAL_API_SECRET: your-backend-api-secret-here (must match backend)
+#    - GOOGLE_CLIENT_ID: your-google-oauth-client-id
+#    - GOOGLE_CLIENT_SECRET: your-google-oauth-client-secret
+#
+# 3. UPDATE GOOGLE OAUTH SETTINGS:
+#    Go to: Google Cloud Console > APIs & Services > Credentials
+#    Update OAuth client with your Render URLs:
+#    - Authorized origins: https://telogical-frontend-XXXX.onrender.com
+#    - Redirect URIs: https://telogical-frontend-XXXX.onrender.com/api/auth/callback/google
+#
+# 4. COST ESTIMATE:
+#    - Backend service (starter): $7/month  
+#    - Frontend service (starter): $7/month
+#    - Total: ~$14/month (using your existing database = $0)
+#
+# 5. DATABASE NETWORK ACCESS:
+#    Make sure your existing PostgreSQL database allows connections from:
+#    - Render's IP ranges (check Render docs for current IPs)
+#    - Or use connection strings with SSL/TLS if required
+#
+# NOTES:
+# - You're using your existing PostgreSQL database (no additional cost!)
+# - Plans can be upgraded later if you need more resources
+# - Starter plan includes: 512MB RAM, 0.1 CPU
+# - Free tier is available but has limitations (sleeps after 15min inactivity)

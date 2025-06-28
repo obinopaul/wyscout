@@ -1,0 +1,30 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy package.json and lock files
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+
+# Install dependencies using npm (to avoid pnpm version issues)
+RUN npm install --legacy-peer-deps --no-fund --no-audit
+
+# Copy frontend code
+COPY frontend/ ./
+
+# Create .env.local with required environment variables
+RUN touch .env.local && \
+    echo "USE_TELOGICAL_BACKEND=true" >> .env.local && \
+    echo "TELOGICAL_API_URL=http://backend:8081" >> .env.local && \
+    echo "AUTH_SECRET=random_secret_string_here" >> .env.local
+
+# Modify package.json to skip DB migration during build
+RUN sed -i 's/"build": "tsx lib\/db\/migrate && next build"/"build": "next build"/g' package.json
+
+# Build the Next.js app
+RUN npm run build
+
+# Expose port
+EXPOSE 3000
+
+# Start the application
+CMD sh -c "echo 'POSTGRES_URL=${POSTGRES_URL}' >> .env.local && npm start"
