@@ -21,10 +21,7 @@ from langgraph.prebuilt import create_react_agent
 from langgraph_swarm import create_handoff_tool, create_swarm
 from langgraph_swarm.swarm import SwarmState
 from functools import cache # Used for Python 3.9+
-from backend.agents.tools import (transfer_to_reflection_agent, transfer_to_main_agent, math_counting_tool,
-                                 parallel_graphql_executor, graphql_introspection_agent_tool,
-                                 dma_code_lookup_tool, graphql_schema_tool_2
-                                )
+from backend.agents.wyscout.tools import *
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.graph import StateGraph, START, END
@@ -60,18 +57,15 @@ async def get_saver() -> AsyncPostgresSaver:
 
 # Tools for MainAgent
 main_agent_tools = [
-    parallel_graphql_executor,
-    dma_code_lookup_tool,
-    graphql_schema_tool_2,
-    math_counting_tool,
-    transfer_to_reflection_agent
+    wyscout_advanced_stats,
+    wyscout_area_list,
+
 ]
 
 # Tools for ReflectionAgent
 reflection_agent_tools = [
-    graphql_introspection_agent_tool,
-    parallel_graphql_executor,
-    transfer_to_main_agent
+    wyscout_advanced_stats,
+    wyscout_area_list,
 ]
 
 async def initialize_agents():

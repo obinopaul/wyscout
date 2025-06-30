@@ -5,7 +5,6 @@ from langgraph.pregel import Pregel
 
 from langgraph.graph.state import CompiledStateGraph
 from backend.agents.wyscout.agent import dynamic_swarm_refined
-from backend.agents.research_assistant import research_assistant
 from backend.schema import AgentInfo
 
 DEFAULT_AGENT = "telogical-assistant"  # For testing purposes, use the telogical assistant
@@ -21,10 +20,6 @@ agents: dict[str, Agent] = {
     "telogical-assistant": Agent(
         description="A Telogical assistant that can answer telecommunications market intelligence questions.",
         graph=dynamic_swarm_refined,
-    ),
-    "research-assistant": Agent(
-        description="A research assistant with web search and calculator.", 
-        graph=research_assistant
     )
 }
 

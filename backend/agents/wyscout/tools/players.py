@@ -44,42 +44,7 @@ load_dotenv()
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
-
-# Get absolute path to the data directory
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../"))
-data_dir = os.path.join(project_root, "data")
-
-# Use absolute paths for the CSV files
-ZIP_CODE_CSV_PATH = os.path.join(data_dir, os.getenv("ZIP_CODE_CSV_PATH", "geo-data.csv"))
-DMA_CSV_PATH = os.path.join(data_dir, os.getenv("DMA_CSV_PATH", "DMAs.csv"))
-
-# Debug message to verify path
-# print(f"Looking for ZIP code file at: {ZIP_CODE_CSV_PATH}")
-# print(f"Looking for DMA file at: {DMA_CSV_PATH}")
-# --- Constants (Replace with your actual values or load from environment) ---
-DEFAULT_GRAPHQL_ENDPOINT = os.getenv("TELOGICAL_GRAPHQL_ENDPOINT_2", "YOUR_GRAPHQL_ENNDPOINT_HERE")
-DEFAULT_AUTH_TOKEN = os.getenv("TELOGICAL_AUTH_TOKEN_2", "YOUR_AUTH_TOKEN_HERE")
-DEFAULT_LOCALE = os.getenv("TELOGICAL_LOCALE", "YOUR_LOCALE_HERE")
-# Path to CSV files in the data folder
-DEFAULT_TIMEOUT = 30  # seconds for each GraphQL request
-
-
-# --- Telogical LLM ---
-TELOGICAL_MODEL_ENDPOINT_GPT = os.getenv("TELOGICAL_MODEL_ENDPOINT_GPT")
-TELOGICAL_API_KEY_GPT = os.getenv("TELOGICAL_API_KEY_GPT")
-TELOGICAL_MODEL_DEPLOYMENT_GPT = os.getenv("TELOGICAL_MODEL_DEPLOYMENT_GPT")
-TELOGICAL_MODEL_API_VERSION_GPT = os.getenv("TELOGICAL_MODEL_API_VERSION_GPT")
-# GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-# NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
-
-
-
 # ---------------------------------------------------------------------------
-# Tool 2: GraphQL Query Tool (Parallel Execution)
-# ---------------------------------------------------------------------------
-
-# --- Constants and Configuration ---
-# In a real-world scenario, these would be in a configuration file or environment variables
 WYSCOUT_API_BASE_URL = os.getenv("WYSCOUT_API_BASE_URL", "https://apirest.wyscout.com/v2")
 DEFAULT_AUTH_TOKEN = os.getenv("DEFAULT_AUTH_TOKEN", "YOUR_WYSCOUT_API_TOKEN")  # Replace with your actual token
 DEFAULT_TIMEOUT = int(os.getenv("DEFAULT_TIMEOUT", 30))
@@ -96,7 +61,7 @@ class PlayerInfoInput(BaseModel):
     get_transfers: bool = Field(False, description="Set to True to retrieve the player's transfer history.")
     details_relations: Optional[List[str]] = Field(None, description="For 'get_details', a comma-separated list of related objects to detail (e.g., 'currentTeam').")
     career_fetch: Optional[List[str]] = Field(None, description="For 'get_career', a comma-separated list of related objects to fetch (e.g., 'player').")
-    career_details: Optional[List[str]] = Field(None, description="For 'get_career', a comma-separated list of related objects to detail (e.g., 'team,competition,season').")
+    career_details: Optional[List[str]] = Field(None, description="For 'get_career', a comma-separated list of related objects to detail (e.g., 'team, competition, season').")
     contract_fetch: Optional[List[str]] = Field(None, description="For 'get_contract_info', a comma-separated list of related objects to fetch (e.g., 'player').")
     fixtures_from_date: Optional[str] = Field(None, description="For 'get_fixtures', the start date in YYYY-MM-DD format.")
     fixtures_to_date: Optional[str] = Field(None, description="For 'get_fixtures', the end date in YYYY-MM-DD format.")
